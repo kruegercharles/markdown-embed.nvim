@@ -1,5 +1,5 @@
 # markdown-embed.nvim
-This plugin allows you to embed whole markdown files or parts of them into other markdown files in Neovim.
+This plugin allows you to embed whole markdown files or parts of them into other markdown files using virtual lines in Neovim.
 
 ![Screenshot](assets/screenshot.png)
 
