@@ -17,7 +17,9 @@ Install via Lazy:
    "kruegercharles/markdown-embed.nvim",
     config = function()
         require("markdown-embed").setup({
-            base_path = '/path/to/your/markdown/files', -- The plugin will look for files relative to this path
+            -- The plugin will look for files relative to this path
+            -- It should also work independent of that with files in the same folder
+            base_path = '/path/to/your/markdown/files',
         })
     end
 }
