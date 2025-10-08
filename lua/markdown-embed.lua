@@ -117,7 +117,17 @@ local function read_file_content(path, heading)
     return content_to_embed, nil
 end
 
--- Wraps a single line of text to a given width.
+-- Removes markdown formatting characters from text
+local function strip_markdown(text)
+    -- Remove headings
+    text = text:gsub("^#+%s+", "")
+    -- Remove bold and italic markers
+    text = text:gsub("%*%*(.-)%*%*", "%1")
+    text = text:gsub("%*([^*].-[^*])%*", "%1")
+    return text
+end
+
+-- Wraps a single line of text to a given width (without markdown characters).
 local function wrap_text(text, width)
     if not text or #text == 0 then
         return {''}
@@ -213,21 +223,6 @@ local function parse_line_for_highlights(line, default_hl, bold_hl, italic_hl)
     return chunks
 end
 
--- Calculates the extra width from markdown characters that will be removed during parsing.
-local function calculate_markdown_width(line)
-    local width = 0
-    -- Heading width
-    local heading_level = line:match("^(#+)%s")
-    if heading_level then
-        width = width + #heading_level + 1
-    end
-    -- Count all asterisks used for markdown (* and **)
-    for _ in line:gmatch("%*") do
-        width = width + 1
-    end
-    return width
-end
-
 -- Creates the virtual lines for the extmark with a border.
 local function create_virtual_lines(content, indent, highlight_group)
     if not content or #content == 0 then
@@ -236,25 +231,34 @@ local function create_virtual_lines(content, indent, highlight_group)
                 {indent .. '└' .. string.rep('─', 2) .. '┘', highlight_group}}
     end
 
+    local window_width = vim.api.nvim_win_get_width(0)
+    local max_embed_width = math.floor(window_width * 0.8)
+
+    -- Calculate max width based on stripped markdown
     local max_line_width = 0
     for _, line in ipairs(content) do
-        if vim.fn.strdisplaywidth(line) > max_line_width then
-            max_line_width = vim.fn.strdisplaywidth(line)
+        local stripped = strip_markdown(line)
+        if vim.fn.strdisplaywidth(stripped) > max_line_width then
+            max_line_width = vim.fn.strdisplaywidth(stripped)
         end
     end
 
-    local window_width = vim.api.nvim_win_get_width(0)
-    local max_embed_width = math.floor(window_width * 0.8)
     local display_width = math.min(max_line_width, max_embed_width)
 
+    -- Process lines: parse highlights first, then wrap if needed
     local processed_lines = {}
     for _, line in ipairs(content) do
-        if vim.fn.strdisplaywidth(line) > display_width then
-            local wrapped_lines = wrap_text(line, display_width)
+        local stripped = strip_markdown(line)
+        local line_width = vim.fn.strdisplaywidth(stripped)
+
+        if line_width > display_width then
+            -- Need to wrap this line
+            local wrapped_lines = wrap_text(stripped, display_width)
             for _, wrapped_line in ipairs(wrapped_lines) do
                 table.insert(processed_lines, wrapped_line)
             end
         else
+            -- Line fits, keep original for markdown parsing
             table.insert(processed_lines, line)
         end
     end
@@ -265,8 +269,15 @@ local function create_virtual_lines(content, indent, highlight_group)
 
     -- Content lines with side borders
     for _, line in ipairs(processed_lines) do
-        local padding = string.rep(' ', display_width - vim.fn.strdisplaywidth(line) + calculate_markdown_width(line))
         local line_chunks = parse_line_for_highlights(line, highlight_group, 'EmbedMdBold', 'EmbedMdItalic')
+
+        -- Calculate actual display width after stripping markdown
+        local actual_width = 0
+        for _, chunk in ipairs(line_chunks) do
+            actual_width = actual_width + vim.fn.strdisplaywidth(chunk[1])
+        end
+
+        local padding = string.rep(' ', display_width - actual_width)
 
         -- Prepend the border and indent to the first chunk
         line_chunks[1][1] = indent .. '│ ' .. line_chunks[1][1]

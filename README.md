@@ -48,7 +48,6 @@ Images like those rendered with [image.nvim](https://github.com/3rd/image.nvim) 
 If you know how to fix this, please open an issue and/or a pull request.
 
 # Roadmap
-- Fix border lines when e.g. bold text uses more than one line
 - Render tables in embeds somehow
 - Render checkboxes in embeds
 - Render code blocks in embeds
