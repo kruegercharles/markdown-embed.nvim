@@ -57,6 +57,7 @@ If you know how to fix this, please open an issue and/or a pull request.
 - Make plugin way more configurable
 - Add health checks?
 - Add shortcut to jump to the source of an embed
+- FIX: When there is a ":" in the heading, the plugin fails to find the heading
 
 # Future Work
 In theory, the logic of this plugin can be used to embed pretty much every type of text file within a markdown file.
