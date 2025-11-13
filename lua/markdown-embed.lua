@@ -57,18 +57,15 @@ end
 -- Reads the content of a file given a path, optionally starting from a specific heading.
 local function read_file_content(path, heading)
     local file = nil
-    local tried_path = ""
 
     -- Try with base_path first if it's configured
     if config.base_path then
-        local full_path = vim.fn.resolve(config.base_path .. '/' .. path)
-        tried_path = full_path
+        local full_path = vim.fn.findfile(path, config.base_path .. ';')
         file = io.open(full_path, 'r')
     end
 
-    -- If opening with base_path failed or base_path is not set, try the relative path
+    -- If no base_path is set, just search in the current working directory
     if not file then
-        tried_path = path
         file = io.open(path, 'r')
     end
 
@@ -83,25 +80,39 @@ local function read_file_content(path, heading)
     file:close()
 
     local content_to_embed = {}
+    -- If no heading is specified, embed the entire file
     if not heading then
         content_to_embed = file_lines
     else
+        -- Heading is specified, extract the section
         local in_section = false
-        local start_level = 0
-        local search_heading = heading:lower():gsub("^%s*(.-)%s*$", "%1")
+        local heading_level = nil
 
         for _, file_line in ipairs(file_lines) do
-            local current_level, heading_text = file_line:match("^(#+)%s+(.*)")
+            -- Not exactly sure why, but I have to include the following normalization to match headings correctly
+            local normalized_line = string.gsub(file_line, "\194\160", " ")
+            local normalized_heading = string.gsub(heading, "\194\160", " ")
+            local found = string.find(normalized_line, normalized_heading, 1, true)
+            local isHeading = vim.fn.count(file_line, "#") > 0
 
-            if in_section then
-                if current_level and #current_level <= start_level then
-                    break -- Stop if a heading of same or higher level is found
-                end
-                table.insert(content_to_embed, file_line)
-            elseif current_level and heading_text:lower():gsub("^%s*(.-)%s*$", "%1") == search_heading then
+            -- Add the heading itself
+            if found and found > 0 and isHeading then
+                heading_level = vim.fn.count(file_line, "#")
                 in_section = true
-                start_level = #current_level
+                goto continue
             end
+
+            -- Add every other line within the section
+            if in_section then
+                local current_level = vim.fn.count(file_line, "#")
+                if current_level > 0 and current_level <= heading_level then
+                    -- Stop if a heading of same or higher level is found
+                    break
+                else
+                    table.insert(content_to_embed, file_line)
+                end
+            end
+            ::continue::
         end
 
         if not in_section then
