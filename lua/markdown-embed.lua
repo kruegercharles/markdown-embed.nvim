@@ -93,7 +93,7 @@ local function read_file_content(path, heading)
             local normalized_line = string.gsub(file_line, "\194\160", " ")
             local normalized_heading = string.gsub(heading, "\194\160", " ")
             local found = string.find(normalized_line, normalized_heading, 1, true)
-            local isHeading = vim.fn.count(file_line, "#") > 0
+            local isHeading = vim.fn.count(file_line, "# ") > 0
 
             -- Add the heading itself
             if found and found > 0 and isHeading then
@@ -104,7 +104,10 @@ local function read_file_content(path, heading)
 
             -- Add every other line within the section
             if in_section then
-                local current_level = vim.fn.count(file_line, "#")
+                local current_level = 0
+                if isHeading then
+                    current_level = vim.fn.count(file_line, "#")
+                end
                 if current_level > 0 and current_level <= heading_level then
                     -- Stop if a heading of same or higher level is found
                     break
