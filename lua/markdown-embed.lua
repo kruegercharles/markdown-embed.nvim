@@ -56,17 +56,13 @@ end
 
 -- Reads the content of a file given a path, optionally starting from a specific heading.
 local function read_file_content(path, heading)
-    local file = nil
+    -- Just search in the current working directory first
+    local file = io.open(path, 'r')
 
-    -- Try with base_path first if it's configured
-    if config.base_path then
+    -- Try with base_path if it's configured
+    if not file and config.base_path then
         local full_path = vim.fn.findfile(path, config.base_path .. ';')
         file = io.open(full_path, 'r')
-    end
-
-    -- If no base_path is set, just search in the current working directory
-    if not file then
-        file = io.open(path, 'r')
     end
 
     if not file then
@@ -93,7 +89,7 @@ local function read_file_content(path, heading)
             local normalized_line = string.gsub(file_line, "\194\160", " ")
             local normalized_heading = string.gsub(heading, "\194\160", " ")
 
-            -- Ignore ":" in lines
+            -- Ignore ":" in lines, because that is how Obsidian handles it
             normalized_line = string.gsub(normalized_line, ":", "")
             normalized_heading = string.gsub(normalized_heading, ":", "")
 
