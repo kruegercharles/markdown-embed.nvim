@@ -48,6 +48,7 @@ Images like those rendered with [image.nvim](https://github.com/3rd/image.nvim) 
 If you know how to fix this, please open an issue and/or a pull request.
 
 # Roadmap
+- Implement shortcut to insert an embed
 - Render tables in embeds somehow
 - Render checkboxes in embeds
 - Render code blocks in embeds
