@@ -92,6 +92,11 @@ local function read_file_content(path, heading)
             -- Not exactly sure why, but I have to include the following normalization to match headings correctly
             local normalized_line = string.gsub(file_line, "\194\160", " ")
             local normalized_heading = string.gsub(heading, "\194\160", " ")
+
+            -- Ignore ":" in lines
+            normalized_line = string.gsub(normalized_line, ":", "")
+            normalized_heading = string.gsub(normalized_heading, ":", "")
+
             local found = string.find(normalized_line, normalized_heading, 1, true)
             local isHeading = vim.fn.count(file_line, "# ") > 0
 
