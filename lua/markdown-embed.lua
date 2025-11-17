@@ -1,4 +1,3 @@
--- Define a highlight group for embedded content
 vim.api.nvim_set_hl(0, 'EmbedMdContent', {
     fg = 'gray'
 })
@@ -134,8 +133,6 @@ end
 
 -- Removes markdown formatting characters from text
 local function strip_markdown(text)
-    -- Remove headings
-    text = text:gsub("^#+%s+", "")
     -- Remove bold and italic markers
     text = text:gsub("%*%*(.-)%*%*", "%1")
     text = text:gsub("%*([^*].-[^*])%*", "%1")
