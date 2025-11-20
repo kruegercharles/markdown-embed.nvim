@@ -56,7 +56,14 @@ end
 -- Reads the content of a file given a path, optionally starting from a specific heading.
 local function read_file_content(path, heading)
     -- Just search in the current working directory first
-    local file = io.open(path, 'r')
+    local file = io.open(path, "r")
+
+    -- Search from current buffer's directory
+    if not file then
+        local current_file_dir = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":h")
+        local relative_path = current_file_dir .. "/" .. path
+        file = io.open(relative_path, "r")
+    end
 
     -- Try with base_path if it's configured
     if not file and config.base_path then
