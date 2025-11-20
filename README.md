@@ -15,11 +15,21 @@ Install via Lazy:
 ```lua
 {
    "kruegercharles/markdown-embed.nvim",
-    config = function()
+
+    -- For file picken when embedding files
+   dependencies = {"nvim-telescope/telescope.nvim"},
+
+   config = function()
         require("markdown-embed").setup({
             -- The plugin will look for files relative to this path
             -- It should also work independent of that with files in the same folder
             base_path = '/path/to/your/markdown/files',
+
+            -- Key mappings 
+            mappings = {
+                add_embed = "<Leader>ae",
+                open_embed = "<Leader>oe",
+            },
         })
     end
 }
@@ -48,7 +58,6 @@ Images like those rendered with [image.nvim](https://github.com/3rd/image.nvim) 
 If you know how to fix this, please open an issue and/or a pull request.
 
 # Roadmap
-- Implement shortcut to insert an embed
 - Render tables in embeds somehow
 - Render checkboxes in embeds
 - Render code blocks in embeds
@@ -57,7 +66,6 @@ If you know how to fix this, please open an issue and/or a pull request.
 - Render Latex in embeds
 - Make plugin way more configurable
 - Add health checks?
-- Add shortcut to jump to the source of an embed
 
 # Future Work
 In theory, the logic of this plugin can be used to embed pretty much every type of text file within a markdown file.
