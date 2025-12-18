@@ -362,78 +362,78 @@ local function update_embeds()
 end
 
 local function urlencode(str)
-	if not str then
-		return nil
-	end
-	str = str:gsub(" ", "%%20")
-	return str
+    if not str then
+        return nil
+    end
+    str = str:gsub(" ", "%%20")
+    return str
 end
 
 local function urldecode(str)
-	if not str then
-		return nil
-	end
-	str = str:gsub("%%(%x%x)", function(h)
-		return string.char(tonumber(h, 16))
-	end)
-	return str
+    if not str then
+        return nil
+    end
+    str = str:gsub("%%(%x%x)", function(h)
+        return string.char(tonumber(h, 16))
+    end)
+    return str
 end
 
 -- Opens an embedded file and optionally jumps to a heading.
 local function open_embedded_file()
-	local bufnr = vim.api.nvim_get_current_buf()
-	local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
-	local line_content = vim.api.nvim_buf_get_lines(bufnr, cursor_line - 1, cursor_line, false)[1]
+    local bufnr = vim.api.nvim_get_current_buf()
+    local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
+    local line_content = vim.api.nvim_buf_get_lines(bufnr, cursor_line - 1, cursor_line, false)[1]
 
-	local path, heading = get_path_from_line(line_content)
+    local path, heading = get_path_from_line(line_content)
 
-	if not path then
-		vim.notify("No embed link found on the current line.", vim.log.levels.WARN)
-		return
-	end
+    if not path then
+        vim.notify("No embed link found on the current line.", vim.log.levels.WARN)
+        return
+    end
 
-	-- Resolve the file path
-	local resolved_path = nil
-	-- 1. Try current directory
-	if vim.fn.filereadable(path) == 1 then
-		resolved_path = path
-	else
-		-- 2. Try path relative to current buffer's directory
-		local current_file_dir = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ":h")
-		local relative_path = current_file_dir .. "/" .. path
-		if vim.fn.filereadable(relative_path) == 1 then
-			resolved_path = relative_path
-		else
-			-- 3. Try with base_path if configured
-			if config.base_path then
-				local full_path = vim.fn.findfile(path, config.base_path .. ";")
-				if full_path ~= "" then
-					resolved_path = full_path
-				end
-			end
-		end
-	end
+    -- Resolve the file path
+    local resolved_path = nil
+    -- 1. Try current directory
+    if vim.fn.filereadable(path) == 1 then
+        resolved_path = path
+    else
+        -- 2. Try path relative to current buffer's directory
+        local current_file_dir = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ":h")
+        local relative_path = current_file_dir .. "/" .. path
+        if vim.fn.filereadable(relative_path) == 1 then
+            resolved_path = relative_path
+        else
+            -- 3. Try with base_path if configured
+            if config.base_path then
+                local full_path = vim.fn.findfile(path, config.base_path .. ";")
+                if full_path ~= "" then
+                    resolved_path = full_path
+                end
+            end
+        end
+    end
 
-	if not resolved_path then
-		vim.notify("Embedded file not found: " .. path, vim.log.levels.ERROR)
-		return
-	end
+    if not resolved_path then
+        vim.notify("Embedded file not found: " .. path, vim.log.levels.ERROR)
+        return
+    end
 
-	-- Open the file in a new buffer
-	vim.cmd("edit " .. resolved_path)
+    -- Open the file in a new buffer
+    vim.cmd("edit " .. resolved_path)
 
-	if heading then
-		-- Schedule a search for the heading after the file is opened
-		vim.schedule(function()
-			local decoded_heading = urldecode(heading)
-			-- Escape special characters in heading for search pattern
-			local escaped_heading = vim.fn.escape(decoded_heading, [[\/.*^$[]])
-			-- Search for the heading (case-insensitive)
-			vim.cmd("/^#\\+.*" .. escaped_heading .. "/i")
-			-- Move cursor to the beginning of the line
-			vim.cmd("normal! ^")
-		end)
-	end
+    if heading then
+        -- Schedule a search for the heading after the file is opened
+        vim.schedule(function()
+            local decoded_heading = urldecode(heading)
+            -- Escape special characters in heading for search pattern
+            local escaped_heading = vim.fn.escape(decoded_heading, [[\/.*^$[]])
+            -- Search for the heading (case-insensitive)
+            vim.cmd("/^#\\+.*" .. escaped_heading .. "/i")
+            -- Move cursor to the beginning of the line
+            vim.cmd("normal! ^")
+        end)
+    end
 end
 local function pick_file_and_heading()
     local actions = require("telescope.actions")
@@ -486,7 +486,12 @@ local function pick_file_and_heading()
                         local selection = action_state.get_selected_entry()
                         local heading_text = selection.value:match("^#+ (.*)")
                         local relative_path = vim.fn.fnamemodify(file_path, ":.")
-                        local embed_link = string.format("![%s](%s#%s)", heading_text, urlencode(relative_path), urlencode(heading_text))
+                        local embed_link = string.format(
+                            "![%s](%s#%s)",
+                            heading_text,
+                            urlencode(relative_path),
+                            urlencode(heading_text)
+                        )
                         vim.api.nvim_put({ embed_link }, "c", true, true)
                         update_embeds()
                     end)
