@@ -28,10 +28,13 @@ local config = {
 
 -- Parses a line to extract the path and an optional heading.
 local function get_path_from_line(line)
-    local link = line:match("!%[.-%]%((.-)%)")
-    if not link then
+    local full_link = line:match("!%b[]%b()")
+    if not full_link then
         return nil, nil
     end
+
+    local bracket_part = full_link:match("!%b[]")
+    local link = full_link:sub(#bracket_part + 2, -2)
 
     -- Separate path and heading
     local path, heading = link:match("([^#]+)#?(.*)")
