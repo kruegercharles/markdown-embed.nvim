@@ -533,6 +533,8 @@ local function setup(opts)
 
     -- Create a user command to trigger the update manually
     vim.api.nvim_create_user_command("UpdateEmbeds", update_embeds, {})
+    vim.api.nvim_create_user_command("MarkdownAddEmbed", pick_file_and_heading, {})
+    vim.api.nvim_create_user_command("MarkdownOpenEmbed", open_embedded_file, {})
 
     if config.mappings.add_embed then
         vim.keymap.set("n", config.mappings.add_embed, pick_file_and_heading, {
@@ -569,4 +571,6 @@ return {
     setup = setup,
     update_embeds = update_embeds,
     open_embedded_file = open_embedded_file,
+    add_embed = pick_file_and_heading,
+    open_embed = open_embedded_file,
 }
