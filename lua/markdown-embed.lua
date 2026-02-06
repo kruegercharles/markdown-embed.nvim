@@ -18,6 +18,15 @@ vim.api.nvim_set_hl(0, "EmbedMdBoldItalic", {
     italic = true,
 })
 
+---@class MarkdownEmbedMappings
+---@field add_embed string?
+---@field open_embed string?
+
+---@class MarkdownEmbedConfig
+---@field base_path string?
+---@field mappings MarkdownEmbedMappings
+
+---@type MarkdownEmbedConfig
 local config = {
     base_path = nil,
     mappings = {
@@ -26,7 +35,10 @@ local config = {
     },
 }
 
--- Parses a line to extract the path and an optional heading.
+---Parses a line to extract the path and an optional heading.
+---@param line string
+---@return string? path
+---@return string? heading
 local function get_path_from_line(line)
     local full_link = line:match("!%b[]%b()")
     if not full_link then
@@ -60,7 +72,11 @@ local function get_path_from_line(line)
     return path, heading
 end
 
--- Reads the content of a file given a path, optionally starting from a specific heading.
+---Reads the content of a file given a path, optionally starting from a specific heading.
+---@param path string
+---@param heading string?
+---@return string[]? content
+---@return string? error
 local function read_file_content(path, heading)
     -- Just search in the current working directory first
     local file = io.open(path, "r")
@@ -145,7 +161,9 @@ local function read_file_content(path, heading)
     return content_to_embed, nil
 end
 
--- Removes markdown formatting characters from text
+---Removes markdown formatting characters from text
+---@param text string
+---@return string
 local function strip_markdown(text)
     -- Remove bold and italic markers
     text = text:gsub("%*%*(.-)%*%*", "%1")
@@ -153,7 +171,10 @@ local function strip_markdown(text)
     return text
 end
 
--- Wraps a single line of text to a given width (without markdown characters).
+---Wraps a single line of text to a given width (without markdown characters).
+---@param text string
+---@param width number
+---@return string[]
 local function wrap_text(text, width)
     if not text or #text == 0 then
         return { "" }
@@ -193,7 +214,12 @@ local function wrap_text(text, width)
     return lines
 end
 
--- Parses a line for bold and italic markdown and returns chunks for virtual text.
+---Parses a line for bold and italic markdown and returns chunks for virtual text.
+---@param line string
+---@param default_hl string
+---@param bold_hl string
+---@param italic_hl string
+---@return table[] chunks Chunks in the format {text, highlight_group}
 local function parse_line_for_highlights(line, default_hl, bold_hl, italic_hl)
     -- Check for headings first
     local heading_level, heading_text = line:match("^(#+)%s+(.*)")
@@ -249,13 +275,17 @@ local function parse_line_for_highlights(line, default_hl, bold_hl, italic_hl)
     return chunks
 end
 
--- Creates the virtual lines for the extmark with a border.
+---Creates the virtual lines for the extmark with a border.
+---@param content string[]?
+---@param indent string
+---@param highlight_group string
+---@return table[][] virtual_lines
 local function create_virtual_lines(content, indent, highlight_group)
     if not content or #content == 0 then
         return {
-            { indent .. "┌" .. string.rep("─", 2) .. "┐", highlight_group },
-            { indent .. "│" .. string.rep(" ", 2) .. "│", highlight_group },
-            { indent .. "└" .. string.rep("─", 2) .. "┘", highlight_group },
+            { { indent .. "┌" .. string.rep("─", 2) .. "┐", highlight_group } },
+            { { indent .. "│" .. string.rep(" ", 2) .. "│", highlight_group } },
+            { { indent .. "└" .. string.rep("─", 2) .. "┘", highlight_group } },
         }
     end
 
@@ -327,7 +357,7 @@ local function create_virtual_lines(content, indent, highlight_group)
     return virtual_lines
 end
 
--- Main function to update embedded Markdown content
+---Main function to update embedded Markdown content
 local function update_embeds()
     -- Create a namespace for our extmarks
     local ns = vim.api.nvim_create_namespace("markdown-embed")
@@ -364,6 +394,8 @@ local function update_embeds()
     end
 end
 
+---@param str string?
+---@return string?
 local function urlencode(str)
     if not str then
         return nil
@@ -372,6 +404,8 @@ local function urlencode(str)
     return str
 end
 
+---@param str string?
+---@return string?
 local function urldecode(str)
     if not str then
         return nil
@@ -382,7 +416,7 @@ local function urldecode(str)
     return str
 end
 
--- Opens an embedded file and optionally jumps to a heading.
+---Opens an embedded file and optionally jumps to a heading.
 local function open_embedded_file()
     local bufnr = vim.api.nvim_get_current_buf()
     local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
@@ -438,6 +472,8 @@ local function open_embedded_file()
         end)
     end
 end
+
+---Picks a file and optionally a heading to embed.
 local function pick_file_and_heading()
     local actions = require("telescope.actions")
     local action_state = require("telescope.actions.state")
@@ -483,7 +519,7 @@ local function pick_file_and_heading()
                     end,
                 }),
                 sorter = require("telescope.sorters").get_generic_fuzzy_sorter(),
-                attach_mappings = function(prompt_bufnr, map)
+                attach_mappings = function(prompt_bufnr, _)
                     actions.select_default:replace(function()
                         actions.close(prompt_bufnr)
                         local selection = action_state.get_selected_entry()
@@ -528,6 +564,7 @@ local function pick_file_and_heading()
     require("telescope.builtin").find_files(find_files_opts)
 end
 
+---@param opts MarkdownEmbedConfig?
 local function setup(opts)
     config = vim.tbl_deep_extend("force", config, opts or {})
 
